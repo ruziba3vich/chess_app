@@ -39,29 +39,29 @@ func (r *RedisService) FindMatch(playerID string, playerRank int32, duration int
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key := fmt.Sprintf("%s_%dmin", r.config.GameConfig.MatchMakingQueueName, duration) // Match within same duration
-	rankRange := int32(r.config.GameConfig.RankRange)
-	minRank := float64(playerRank - rankRange)
-	maxRank := float64(playerRank + rankRange)
+	key := fmt.Sprintf("matchmaking_queue:%d", duration)
 
-	// Find closest match within the same duration queue
-	matches, err := r.client.ZRangeByScore(ctx, key, &redis.ZRangeBy{
-		Min:   fmt.Sprintf("%f", minRank),
-		Max:   fmt.Sprintf("%f", maxRank),
-		Count: 1,
+	// Find players within the rank range
+	results, err := r.client.ZRangeByScore(ctx, key, &redis.ZRangeBy{
+		Min: fmt.Sprintf("%d", playerRank-200),
+		Max: fmt.Sprintf("%d", playerRank+200),
 	}).Result()
-	if err != nil || len(matches) == 0 {
-		return "", fmt.Errorf("no match found")
+
+	if err != nil || len(results) == 0 {
+		return "", fmt.Errorf("no suitable opponent found")
 	}
 
-	// Remove matched player from queue
-	match := matches[0]
-
-	if err := r.RemovePlayer(match, key, r.config.GameConfig.SearchDuration); err != nil {
-		return "", err
+	for _, result := range results {
+		opponentID := result
+		if opponentID != playerID {
+			if err := r.RemovePlayer(opponentID, key, int8(duration)); err != nil {
+				return "", err
+			}
+			return opponentID, nil
+		}
 	}
 
-	return match, nil
+	return "", fmt.Errorf("no suitable opponent found")
 }
 
 func (r *RedisService) RemovePlayer(playerID string, key string, duration int8) error {

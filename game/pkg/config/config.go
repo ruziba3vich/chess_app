@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -40,6 +41,9 @@ func LoadConfig() (*Config, error) {
 		log.Println("No .env file found, using environment variables if set.")
 	}
 
+	searchDurationStr := getEnv("SEARCH_DURATION", "1")
+	searchDurationInt, _ := strconv.Atoi(searchDurationStr)
+
 	return &Config{
 		DbConfig: &DbConfig{
 			MongoURI:   getEnv("MONGO_URI", "mongodb://localhost:27017"),
@@ -48,6 +52,7 @@ func LoadConfig() (*Config, error) {
 		},
 		GameConfig: &GameConfig{
 			MatchMakingQueueName: getEnv("MATCH_MAKING_QUEUE_NAME", "match_making_queue_name"),
+			SearchDuration:       int8(searchDurationInt),
 		},
 		Port:         getEnv("PORT", "8080"),
 		Protocol:     getEnv("PROTOCOL", "tcp"),

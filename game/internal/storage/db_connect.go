@@ -3,9 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
-	"hash"
 	"log"
 
+	redis_service "github.com/ruziba3vich/chess_app/internal/redis"
 	"github.com/ruziba3vich/chess_app/pkg/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,15 +17,17 @@ type (
 		UsersCollection *mongo.Collection
 	}
 	Storage struct {
-		database *DB
-		logger   *log.Logger
+		database      *DB
+		logger        *log.Logger
+		redis_service *redis_service.RedisService
 	}
 )
 
-func NewStorage(database *DB, logger *log.Logger, hash hash.Hash, cfg *config.Config) *Storage {
+func NewStorage(database *DB, logger *log.Logger, redis_service *redis_service.RedisService) *Storage {
 	return &Storage{
-		database: database,
-		logger:   logger,
+		database:      database,
+		logger:        logger,
+		redis_service: redis_service,
 	}
 }
 
