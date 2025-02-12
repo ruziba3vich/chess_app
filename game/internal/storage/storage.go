@@ -4,25 +4,27 @@ import (
 	"context"
 
 	"github.com/ruziba3vich/chess_app/internal/genprotos"
+	"github.com/ruziba3vich/chess_app/internal/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (s *Storage) CreateGameStorage(ctx *context.Context, req *genprotos.CreateGameRequest) (*genprotos.CreateGameResponse, error) {
-	if err := s.redis_service.AddPlayerToQueue(
-		req.GetPlayerId(),
-		req.GetPlayerRank(),
-		int8(req.GetDuration())); err != nil {
-		s.logger.Println(err.Error())
-		return nil, err
+func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (*genprotos.CreateGameResponse, error) {
+	// Create game model with both player IDs and duration
+	game := models.GameModel{
+		Players:  []string{player1, player2},
+		Moves:    []genprotos.Move{}, // Empty moves at the start
+		Duration: duration,           // Store duration
 	}
-	opponent, err := s.redis_service.FindMatch(
-		req.GetPlayerId(),
-		req.GetPlayerRank(),
-		req.GetDuration(),
-	)
+
+	// Insert into MongoDB
+	result, err := s.database.GamesCollection.InsertOne(ctx, game)
 	if err != nil {
-		s.logger.Println(err.Error())
+		s.logger.Println("Error inserting game:", err)
 		return nil, err
 	}
-	
-	return &genprotos.CreateGameResponse{}, nil
+
+	// Get inserted game ID
+	gameID := result.InsertedID.(primitive.ObjectID).Hex()
+
+	return &genprotos.CreateGameResponse{GameId: gameID}, nil
 }

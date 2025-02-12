@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	redis_service "github.com/ruziba3vich/chess_app/internal/redis"
 	"github.com/ruziba3vich/chess_app/pkg/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,17 +16,15 @@ type (
 		GamesCollection *mongo.Collection
 	}
 	Storage struct {
-		database      *DB
-		logger        *log.Logger
-		redis_service *redis_service.RedisService
+		database *DB
+		logger   *log.Logger
 	}
 )
 
-func NewStorage(database *DB, logger *log.Logger, redis_service *redis_service.RedisService) *Storage {
+func NewStorage(database *DB, logger *log.Logger) *Storage {
 	return &Storage{
-		database:      database,
-		logger:        logger,
-		redis_service: redis_service,
+		database: database,
+		logger:   logger,
 	}
 }
 
@@ -46,7 +43,7 @@ func ConnectDB(cfg *config.Config, ctx context.Context) (*DB, error) {
 
 	return &DB{
 		Client:          client,
-		UsersCollection: client.Database(cfg.DbConfig.MongoDB).Collection(cfg.DbConfig.Collection),
+		GamesCollection: client.Database(cfg.DbConfig.MongoDB).Collection(cfg.DbConfig.Collection),
 	}, nil
 }
 

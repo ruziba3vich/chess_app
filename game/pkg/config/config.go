@@ -29,9 +29,11 @@ type (
 
 	// GameConfig keeps the game configuration elements
 	GameConfig struct {
-		MatchMakingQueueName string // queue name in redis for users to be grouped in
-		RankRange            int8   // players will be choosen in this range of score
-		SearchDuration       int8   // game is gonna be in search for opponent for this many minutes
+		ScoreQueue     string // queue name in redis for users to be grouped in
+		RankRange      int8   // players will be choosen in this range of score
+		SearchDuration int8   // game is gonna be in search for opponent for this many minutes
+		RedisChannel   string
+		WorkerPoolSize int8
 	}
 )
 
@@ -43,6 +45,8 @@ func LoadConfig() (*Config, error) {
 
 	searchDurationStr := getEnv("SEARCH_DURATION", "1")
 	searchDurationInt, _ := strconv.Atoi(searchDurationStr)
+	workerPoolSizeStr, _ := strconv.Atoi(getEnv("WORKER_POOL_SIZE", "5"))
+	workerPoolSizeInt8 := int8(workerPoolSizeStr)
 
 	return &Config{
 		DbConfig: &DbConfig{
@@ -51,8 +55,10 @@ func LoadConfig() (*Config, error) {
 			Collection: getEnv("MONGO_COLLECTION", "users"),
 		},
 		GameConfig: &GameConfig{
-			MatchMakingQueueName: getEnv("MATCH_MAKING_QUEUE_NAME", "match_making_queue_name"),
-			SearchDuration:       int8(searchDurationInt),
+			ScoreQueue:     getEnv("MATCH_MAKING_QUEUE_NAME", "match_making_queue_name"),
+			SearchDuration: int8(searchDurationInt),
+			RedisChannel:   getEnv("REDIS_CHANNEL", "redis_channel"),
+			WorkerPoolSize: workerPoolSizeInt8,
 		},
 		Port:         getEnv("PORT", "8080"),
 		Protocol:     getEnv("PROTOCOL", "tcp"),
