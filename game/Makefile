@@ -1,2 +1,2 @@
 proto-gen:
-	./pkg/scripts/gen_proto.sh ${CURRENT_DIR}
+	bash ./pkg/scripts/gen_proto.sh "$$(pwd)"

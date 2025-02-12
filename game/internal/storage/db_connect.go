@@ -14,7 +14,7 @@ import (
 type (
 	DB struct {
 		Client          *mongo.Client
-		UsersCollection *mongo.Collection
+		GamesCollection *mongo.Collection
 	}
 	Storage struct {
 		database      *DB
