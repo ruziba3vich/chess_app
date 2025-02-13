@@ -127,5 +127,5 @@ func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 s
 	m.mutex.Unlock()
 
 	m.redisClient.Publish(ctx, m.config.GameConfig.RedisChannel,
-		fmt.Sprintf("player_1:%s:player_2:%s:game_id:%s", player1, player2, gameResp.GameId))
+		fmt.Sprintf("%s:%s:%s", player1, player2, gameResp.GameId))
 }
