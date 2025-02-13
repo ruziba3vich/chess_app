@@ -24,7 +24,9 @@ func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string
 	}
 
 	// Get inserted game ID
-	gameID := result.InsertedID.(primitive.ObjectID).Hex()
+	gameId := result.InsertedID.(primitive.ObjectID).Hex()
 
-	return &genprotos.CreateGameResponse{GameId: gameID}, nil
+	return &genprotos.CreateGameResponse{
+		GameId: gameId,
+	}, nil
 }

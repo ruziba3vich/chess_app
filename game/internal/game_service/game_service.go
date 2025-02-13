@@ -76,7 +76,7 @@ func (m *MatchmakingService) MatchPlayers(ctx context.Context, minDiff, maxDiff 
 	wg.Wait()
 }
 
-func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff int, duration int8) {
+func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff int, duration int8) error {
 	// Use the correct Redis key based on duration
 	queueKey := fmt.Sprintf("%s_%dmin", m.config.GameConfig.ScoreQueue, duration)
 
@@ -84,7 +84,7 @@ func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff i
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return fmt.Errorf("could not find an opponent, please retry")
 		default:
 			players, err := m.redisClient.Eval(ctx, m.luaScript, []string{queueKey},
 				fmt.Sprintf("%d", minDiff), fmt.Sprintf("%d", maxDiff)).Result()
@@ -104,17 +104,19 @@ func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff i
 			player1, _ := res[0].(string)
 			player2, _ := res[1].(string)
 
-			m.handleMatch(ctx, player1, player2, duration)
+			if err := m.handleMatch(ctx, player1, player2, duration); err != nil {
+				return err
+			}
 			backoff = 500 * time.Millisecond
 		}
 	}
 }
 
-func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 string, duration int8) {
+func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 string, duration int8) error {
 	gameResp, err := m.storage.CreateGameStorage(ctx, player1, player2, duration)
 	if err != nil {
 		m.logger.Println("Error creating game:", err)
-		return
+		return err
 	}
 
 	m.mutex.Lock()
@@ -126,6 +128,6 @@ func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 s
 	}
 	m.mutex.Unlock()
 
-	m.redisClient.Publish(ctx, m.config.GameConfig.RedisChannel,
-		fmt.Sprintf("%s:%s:%s", player1, player2, gameResp.GameId))
+	return m.redisClient.Publish(ctx, m.config.GameConfig.RedisChannel,
+		fmt.Sprintf("%s:%s:%s", player1, player2, gameResp.GameId)).Err()
 }
