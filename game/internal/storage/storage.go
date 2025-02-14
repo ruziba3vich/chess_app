@@ -60,9 +60,10 @@ func (s *Storage) MakeMove(ctx context.Context, req *genprotos.MakeMoveRequest) 
 
 	// Return response with check detection
 	return &genprotos.MakeMoveResponse{
-		Success: true,
-		Message: "Move successful",
-		IsCheck: isCheck,
+		Success:     true,
+		Message:     "Move successful",
+		IsCheck:     isCheck,
+		IsCheckmate: detectCheck(game),
 	}, nil
 }
 
@@ -93,4 +94,9 @@ func detectCheck(game *chess.Game) bool {
 	}
 
 	return false
+}
+
+func detectCheckmate(game *chess.Game) bool {
+	// If the current player has no valid moves and is in check → Checkmate!
+	return len(game.ValidMoves()) == 0 && detectCheck(game)
 }
