@@ -9,6 +9,9 @@ import (
 )
 
 func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (*genprotos.CreateGameResponse, error) {
+	return &genprotos.CreateGameResponse{
+		GameId: "game123",
+	}, nil
 	// Create game model with both player IDs and duration
 	game := models.GameModel{
 		Players:  []string{player1, player2},

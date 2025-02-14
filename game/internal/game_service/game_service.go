@@ -58,18 +58,22 @@ func (m *MatchmakingService) AddPlayer(ctx context.Context, playerID string, sco
 	if err != nil {
 		m.logger.Println("Error adding player to queue:", err)
 		return
+	} else {
+		m.logger.Println("SUCCESSFULLY ADDED THE PLAYER INTO REDIS", playerID)
 	}
 
 }
 
 func (m *MatchmakingService) MatchPlayers(ctx context.Context, minDiff, maxDiff int, duration int8) {
 	var wg sync.WaitGroup
-
+	m.logger.Println("starting workers")
 	for range m.config.GameConfig.WorkerPoolSize {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			m.matchWorker(ctx, minDiff, maxDiff, duration)
+			if err := m.matchWorker(ctx, minDiff, maxDiff, duration); err != nil {
+				m.logger.Println("could not start worker", err)
+			}
 		}()
 	}
 
@@ -78,12 +82,14 @@ func (m *MatchmakingService) MatchPlayers(ctx context.Context, minDiff, maxDiff 
 
 func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff int, duration int8) error {
 	// Use the correct Redis key based on duration
+	m.logger.Println("worker started")
 	queueKey := fmt.Sprintf("%s_%dmin", m.config.GameConfig.ScoreQueue, duration)
 
 	backoff := 500 * time.Millisecond
 	for {
 		select {
 		case <-ctx.Done():
+			m.logger.Println("could not find an opponent, please retry")
 			return fmt.Errorf("could not find an opponent, please retry")
 		default:
 			players, err := m.redisClient.Eval(ctx, m.luaScript, []string{queueKey},
@@ -93,11 +99,13 @@ func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff i
 				if backoff < 2*time.Second {
 					backoff *= 2
 				}
+				m.logger.Println("NO PLAYER FOUND", err, players)
 				continue
 			}
 
 			res, ok := players.([]interface{})
 			if !ok || len(res) < 2 {
+				m.logger.Println("NOT ENOUGH PLAYERS")
 				continue
 			}
 
@@ -121,10 +129,16 @@ func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 s
 
 	m.mutex.Lock()
 	if ch1, ok := m.playerChannels[player1]; ok {
+		m.logger.Println("response is sent to channel")
 		ch1 <- gameResp.GameId
+	} else {
+		m.logger.Println("channel not found")
 	}
 	if ch2, ok := m.playerChannels[player2]; ok {
+		m.logger.Println("response is sent to channel")
 		ch2 <- gameResp.GameId
+	} else {
+		m.logger.Println("channel not found")
 	}
 	m.mutex.Unlock()
 
