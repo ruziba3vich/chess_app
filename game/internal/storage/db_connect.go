@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	redisservice "github.com/ruziba3vich/chess_app/internal/redis_service"
 	"github.com/ruziba3vich/chess_app/pkg/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,15 +17,17 @@ type (
 		GamesCollection *mongo.Collection
 	}
 	Storage struct {
-		database *DB
-		logger   *log.Logger
+		database     *DB
+		logger       *log.Logger
+		redisService *redisservice.RedisStorage
 	}
 )
 
-func NewStorage(database *DB, logger *log.Logger) *Storage {
+func NewStorage(database *DB, logger *log.Logger, redisService *redisservice.RedisStorage) *Storage {
 	return &Storage{
-		database: database,
-		logger:   logger,
+		database:     database,
+		logger:       logger,
+		redisService: redisService,
 	}
 }
 

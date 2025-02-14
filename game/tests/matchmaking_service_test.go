@@ -61,11 +61,11 @@ func TestMatchmakingService(t *testing.T) {
 	`
 	logger.Println(luaScript)
 
-	service := game_service.NewMatchmakingService(redisClient, playerChannels, config, storage.NewStorage(nil, logger), wg, logger, luaScript)
+	service := game_service.NewMatchmakingService(redisClient, playerChannels, config, storage.NewStorage(nil, logger, nil), wg, logger, luaScript)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	go service.MatchPlayers(ctx, 1400, 1600, 10)
+	go service.MatchPlayers(ctx, 10, 50, 10)
 	// Create player channels
 	ch1 := make(chan string, 1)
 	ch2 := make(chan string, 1)
