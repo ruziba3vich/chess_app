@@ -1,3 +1,3 @@
-[submodule "game/protos"]
-	path = game/protos
+[submodule "game/-f"]
+	path = game/-f
 	url = https://github.com/ruziba3vich/game_protos.git

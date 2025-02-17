@@ -43,7 +43,7 @@ func NewMatchmakingService(
 	}
 }
 
-func (m *MatchmakingService) AddPlayer(ctx context.Context, playerID string, score float64, duration int8, playerChannel chan string) {
+func (m *MatchmakingService) AddPlayer(ctx context.Context, playerID string, score float64, duration int32, playerChannel chan string) error {
 	m.mutex.Lock()
 	m.playerChannels[playerID] = playerChannel
 	m.mutex.Unlock()
@@ -57,11 +57,9 @@ func (m *MatchmakingService) AddPlayer(ctx context.Context, playerID string, sco
 	}).Err()
 	if err != nil {
 		m.logger.Println("Error adding player to queue:", err)
-		return
-	} else {
-		m.logger.Println("SUCCESSFULLY ADDED THE PLAYER INTO REDIS", playerID)
+		return err
 	}
-
+	return nil
 }
 
 func (m *MatchmakingService) MatchPlayers(ctx context.Context, minDiff, maxDiff int, duration int8) {
@@ -121,7 +119,7 @@ func (m *MatchmakingService) matchWorker(ctx context.Context, minDiff, maxDiff i
 }
 
 func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 string, duration int8) error {
-	gameResp, err := m.storage.CreateGameStorage(ctx, player1, player2, duration)
+	gameId, err := m.storage.CreateGameStorage(ctx, player1, player2, duration)
 	if err != nil {
 		m.logger.Println("Error creating game:", err)
 		return err
@@ -130,18 +128,18 @@ func (m *MatchmakingService) handleMatch(ctx context.Context, player1, player2 s
 	m.mutex.Lock()
 	if ch1, ok := m.playerChannels[player1]; ok {
 		m.logger.Println("response is sent to channel")
-		ch1 <- gameResp.GameId
+		ch1 <- gameId
 	} else {
 		m.logger.Println("channel not found")
 	}
 	if ch2, ok := m.playerChannels[player2]; ok {
 		m.logger.Println("response is sent to channel")
-		ch2 <- gameResp.GameId
+		ch2 <- gameId
 	} else {
 		m.logger.Println("channel not found")
 	}
 	m.mutex.Unlock()
 
 	return m.redisClient.Publish(ctx, m.config.GameConfig.RedisChannel,
-		fmt.Sprintf("%s:%s:%s", player1, player2, gameResp.GameId)).Err()
+		fmt.Sprintf("%s:%s:%s", player1, player2, gameId)).Err()
 }

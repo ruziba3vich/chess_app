@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -29,7 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GameServiceClient interface {
 	MakeMove(ctx context.Context, in *MakeMoveRequest, opts ...grpc.CallOption) (*MakeMoveResponse, error)
-	CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*CreateGameResponse, error)
+	CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetGameStats(ctx context.Context, in *GetGameStatsRequest, opts ...grpc.CallOption) (*GetGameStatsResponse, error)
 }
 
@@ -51,9 +52,9 @@ func (c *gameServiceClient) MakeMove(ctx context.Context, in *MakeMoveRequest, o
 	return out, nil
 }
 
-func (c *gameServiceClient) CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*CreateGameResponse, error) {
+func (c *gameServiceClient) CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateGameResponse)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, GameService_CreateGame_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,7 @@ func (c *gameServiceClient) GetGameStats(ctx context.Context, in *GetGameStatsRe
 // for forward compatibility.
 type GameServiceServer interface {
 	MakeMove(context.Context, *MakeMoveRequest) (*MakeMoveResponse, error)
-	CreateGame(context.Context, *CreateGameRequest) (*CreateGameResponse, error)
+	CreateGame(context.Context, *CreateGameRequest) (*emptypb.Empty, error)
 	GetGameStats(context.Context, *GetGameStatsRequest) (*GetGameStatsResponse, error)
 	mustEmbedUnimplementedGameServiceServer()
 }
@@ -91,7 +92,7 @@ type UnimplementedGameServiceServer struct{}
 func (UnimplementedGameServiceServer) MakeMove(context.Context, *MakeMoveRequest) (*MakeMoveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeMove not implemented")
 }
-func (UnimplementedGameServiceServer) CreateGame(context.Context, *CreateGameRequest) (*CreateGameResponse, error) {
+func (UnimplementedGameServiceServer) CreateGame(context.Context, *CreateGameRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGame not implemented")
 }
 func (UnimplementedGameServiceServer) GetGameStats(context.Context, *GetGameStatsRequest) (*GetGameStatsResponse, error) {

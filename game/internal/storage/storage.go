@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (*genprotos.CreateGameResponse, error) {
+func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (string, error) {
 	// Create game model with both player IDs and duration
 	game := models.GameModel{
 		Players:  []string{player1, player2},
@@ -22,15 +22,12 @@ func (s *Storage) CreateGameStorage(ctx context.Context, player1, player2 string
 	result, err := s.database.GamesCollection.InsertOne(ctx, game)
 	if err != nil {
 		s.logger.Println("Error inserting game:", err)
-		return nil, err
+		return "", err
 	}
 
 	// Get inserted game ID
-	gameId := result.InsertedID.(primitive.ObjectID).Hex()
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 
-	return &genprotos.CreateGameResponse{
-		GameId: gameId,
-	}, nil
 }
 
 func (s *Storage) MakeMove(ctx context.Context, req *genprotos.MakeMoveRequest) (*genprotos.MakeMoveResponse, error) {

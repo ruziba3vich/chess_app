@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/ruziba3vich/chess_app/internal/game_service"
-	"github.com/ruziba3vich/chess_app/internal/genprotos"
 	"github.com/ruziba3vich/chess_app/internal/storage"
 	"github.com/ruziba3vich/chess_app/pkg/config"
 )
@@ -23,9 +22,9 @@ type MockStorage struct {
 	storage.Storage
 }
 
-func (m *MockStorage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (*genprotos.CreateGameResponse, error) {
+func (m *MockStorage) CreateGameStorage(ctx context.Context, player1, player2 string, duration int8) (string, error) {
 	args := m.Called(ctx, player1, player2, duration)
-	return args.Get(0).(*genprotos.CreateGameResponse), args.Error(1)
+	return args.Get(0).(string), args.Error(1)
 }
 
 func TestMatchmakingService(t *testing.T) {
