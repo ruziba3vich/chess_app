@@ -114,6 +114,46 @@ func detectCheck(game *chess.Game) bool {
 	return false
 }
 
+func (s *Storage) GetGameStats(ctx context.Context, gameID string) (*genprotos.GetGameStatsResponse, error) {
+	// Initialize response
+	response := &genprotos.GetGameStatsResponse{
+		Moves: make([]*genprotos.Move, 0),
+	}
+
+	// Retrieve game from Redis
+	game, err := s.redisService.GetGame(gameID)
+	if err != nil {
+		// If not found in Redis, try to get from MongoDB
+		objID, err := primitive.ObjectIDFromHex(gameID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid game ID: %s", err.Error())
+		}
+
+		var gameModel models.GameModel
+		err = s.database.GamesCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&gameModel)
+		if err != nil {
+			return nil, fmt.Errorf("game not found: %s", err.Error())
+		}
+		for i := range gameModel.Moves {
+			response.Moves = append(response.Moves, &gameModel.Moves[i])
+		}
+		return response, nil
+	}
+
+	// If game is found in Redis, get moves from the chess game
+	moves := game.Moves()
+	response.Moves = make([]*genprotos.Move, len(moves))
+
+	for i, move := range moves {
+		response.Moves[i] = &genprotos.Move{
+			MoveFrom: move.S1().String(),
+			MoveTo:   move.S2().String(),
+		}
+	}
+
+	return response, nil
+}
+
 func detectCheckmate(game *chess.Game) bool {
 	// If the current player has no valid moves and is in check → Checkmate!
 	return len(game.ValidMoves()) == 0 && detectCheck(game)
