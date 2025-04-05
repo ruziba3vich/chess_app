@@ -23,8 +23,8 @@ func NewGameService(storage *storage.Storage) *GameService {
 func (g *GameService) CreateGame(ctx context.Context, req *genprotos.CreateGameRequest) error {
 	return g.gameService.AddPlayer(ctx, req.PlayerId, float64(req.PlayerRank), req.Duration, make(chan string))
 }
-func (g *GameService) GetGameStats(ctx context.Context, req *genprotos.GetGameStatsRequest) (*genprotos.GetGameStatsResponse, error) {
-	
-}
+func (g *GameService) GetGameStats(ctx context.Context, req *genprotos.GetGameStatsRequest) (*genprotos.GetGameStatsResponse, error)
 
-func (g *GameService) MakeMove(ctx context.Context, req *genprotos.MakeMoveRequest) (*genprotos.MakeMoveResponse, error)
+func (g *GameService) MakeMove(ctx context.Context, req *genprotos.MakeMoveRequest) (*genprotos.MakeMoveResponse, error) {
+	return g.storage.MakeMove(ctx, req)
+}

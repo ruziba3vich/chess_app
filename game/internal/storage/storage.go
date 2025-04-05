@@ -7,6 +7,7 @@ import (
 	"github.com/notnil/chess"
 	"github.com/ruziba3vich/chess_app/internal/genprotos"
 	"github.com/ruziba3vich/chess_app/internal/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -50,18 +51,38 @@ func (s *Storage) MakeMove(ctx context.Context, req *genprotos.MakeMoveRequest) 
 	// Check if the move results in a check
 	isCheck := detectCheck(game)
 
-	// Save updated game state back to Redis
-	if err := s.redisService.SaveGame(req.GameId, game); err != nil {
-		return nil, fmt.Errorf("failed to save game: %s", err.Error())
+	// After successful move
+	resp := &genprotos.MakeMoveResponse{
+		Success:     true,
+		Message:     "successful move",
+		IsCheck:     isCheck,
+		IsCheckmate: detectCheckmate(game), // Fixed: was detectCheck
 	}
 
-	// Return response with check detection
-	return &genprotos.MakeMoveResponse{
-		Success:     true,
-		Message:     "Move successful",
-		IsCheck:     isCheck,
-		IsCheckmate: detectCheck(game),
-	}, nil
+	// If game ends (checkmate), update MongoDB
+	if resp.IsCheckmate {
+		objID, _ := primitive.ObjectIDFromHex(req.GameId)
+		moves := game.Moves()
+		protoMoves := make([]genprotos.Move, len(moves))
+		for i, move := range moves {
+			protoMoves[i] = genprotos.Move{
+				MoveFrom: move.S1().String(),
+				MoveTo:   move.S2().String(),
+			}
+		}
+
+		update := bson.M{
+			"$set": bson.M{
+				"moves": protoMoves,
+			},
+		}
+		_, err := s.database.GamesCollection.UpdateOne(ctx, bson.M{"_id": objID}, update)
+		if err != nil {
+			s.logger.Println("Failed to update game moves in MongoDB:", err)
+		}
+	}
+
+	return resp, nil
 }
 
 // detectCheck checks if the current position is in check

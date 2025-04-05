@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package game;
+
+
+service GameService {
+    rpc MakeMove(MakeMoveRequest) returns (MakeMoveResponse);
+    rpc CreateGame(CreateGameRequest) returns (CreateGameResponse);
+    rpc GetGameStats(GetGameStatsRequest) returns (GetGameStatsResponse);
+}
+
+message Move {
+    string move_from = 1;
+    string move_to = 2;
+    bool is_white = 3;
+} // we make if it's requester's turn and the requester's side
+
+message CreateGameRequest {
+    string player_id = 1;
+    int32 player_rank = 2;
+    int32 duration = 3;
+} // create a game according to player's rank among [player_rank - 200, player_rank + 200] players
+
+message CreateGameResponse {
+    string game_id = 1;
+} // connect the user to the game by the generated game_id
+
+message MakeMoveRequest {
+    string game_id = 1;
+    string player_id = 2;
+    Move move = 3;
+}
+
+message MakeMoveResponse {
+    bool success = 1;
+    string message = 2;
+} // response contains a message if it is not a successfull move
+
+message GetGameStatsRequest {
+    string game_id = 1;
+} // get game statistics by game_id
+
+message GetGameStatsResponse {
+    Node node = 1;
+} // get an array moves made in the game
+
+message Node {
+    Node prev = 1;
+    Node curr = 2;
+    Node next = 3;
+}
